@@ -89,12 +89,12 @@ void setColors() {
   }
   else if (planet.equals("venus")) {
     for (int i = 0; i < LEDS_COUNT; i++) {
-      strip.setLedColorData(i,255, 255, 255); // white
+      strip.setLedColorData(i,255, 255, 128); // yellow-white
     }
   }
   else if (planet.equals("mars")) {
     for (int i = 0; i < LEDS_COUNT; i++) {
-      strip.setLedColorData(i,232, 142, 81); // red/orange
+      strip.setLedColorData(i,252, 105, 0); // red/orange
     }
   }
   else if (planet.equals("jupiter")) {
@@ -108,17 +108,17 @@ void setColors() {
   }
   else if (planet.equals("saturn")) {
     for (int i = 0; i < LEDS_COUNT; i++) {
-      strip.setLedColorData(i,235, 220, 91); // yellow
+      strip.setLedColorData(i,255, 236, 74); // yellow
     }
   }
   else if (planet.equals("uranus")) {
     for (int i = 0; i < LEDS_COUNT; i++) {
-      strip.setLedColorData(i,0, 247, 255); // light teal
+      strip.setLedColorData(4,0, 158, 129); // teal
     }
   }
   else if (planet.equals("neptune")) {
     for (int i = 0; i < LEDS_COUNT; i++) {
-      strip.setLedColorData(i,0, 115, 255); // dark blue
+      strip.setLedColorData(i,0, 0, 255); // dark blue
     }
   }
   else { //pluto
