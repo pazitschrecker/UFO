@@ -1,44 +1,78 @@
+#include <WebServer.h>
+#include <WiFi.h>
+#include <WiFiUdp.h>
 #include "Freenove_WS2812_Lib_for_ESP32.h"
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 
+/* * * * Server/wifi setup * * * */
+#define CONSOLE_IP "192.168.1.2"
+#define CONSOLE_PORT 4210
+
+const char* ssid = "ESP32";
+const char* password = "12345678";
+WiFiUDP Udp;
+IPAddress local_ip(192, 168, 1, 1);
+IPAddress gateway(192, 168, 1, 1);
+IPAddress subnet(255, 255, 255, 0);
+WebServer server(80);
+
+/* * * * Motion sensor + LED Ring setup * * * */
 int sensorPin = 14; // the number of the infrared motion sensor pin
 #define LEDS_COUNT  8
 #define LEDS_PIN  2
 #define CHANNEL   0
 
-Freenove_ESP32_WS2812 strip = Freenove_ESP32_WS2812(LEDS_COUNT, LEDS_PIN, CHANNEL, TYPE_GRB);
-
 String planets[] = {"mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"};
 String planet = "mercury";
 
-void setup() {
+Freenove_ESP32_WS2812 strip = Freenove_ESP32_WS2812(LEDS_COUNT, LEDS_PIN, CHANNEL, TYPE_GRB);
+
+/* * * * Liquid Crystal I2C setup * * * */
+// set the LCD number of columns and rows
+int lcdColumns = 16;
+int lcdRows = 2;
+
+// set LCD address, number of columns and rows
+// if you don't know your display address, run an I2C scanner sketch
+LiquidCrystal_I2C lcd(0x27, lcdColumns, lcdRows);
+
+void setup()
+{
+  Serial.begin(115200);
+  WiFi.softAP(ssid, password);
+  WiFi.softAPConfig(local_ip, gateway, subnet);
   pinMode(sensorPin, INPUT);  // initialize the sensor pin as input
   setPlanet();
-  Serial.begin(9600);
-  Serial.println("planet: "+ planet);
+  server.begin();
   strip.begin();
+  
+  // initialize LCD
+  lcd.init();
 }
 
-void loop() {
-  // Turn on or off LED according to Infrared Motion Sensor
+void loop()
+{
+  Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
+  // Just test touch pin - Touch0 is T0 which is on GPIO 4.
+  Udp.printf(String(touchRead(T0)).c_str());
+  Udp.endPacket();
+
+  lcd.setCursor(0, 0);
+  // turn on LCD backlight                      
+  lcd.backlight();
+  // print message
+  lcd.print("Hello, World!");
+
   int sense = digitalRead(sensorPin);
-  Serial.println(sense);
-  /*if (sense == 1) {
-    Serial.println("should light up");
+  if (sense == 1) {
     setColors();
     strip.show();
   }
-  else {
-    for (int i = 0; i < LEDS_COUNT; i++) {
-      strip.setLedColorData(i,0,0,0);
-    }
-    strip.show();
-  }
-  */
-  setColors();
-  strip.show();
-  delay(1000);              // wait for a second
+  delay(1000);
 }
 
+// pick planet at random
 void setPlanet() {
    /*int num = random(8);
    planet = planets[num];
@@ -46,6 +80,7 @@ void setPlanet() {
    planet = planets[7];
 }
 
+// set LED colors to correspond to planet
 void setColors() {
   if (planet.equals("mercury")) {
     for (int i = 0; i < LEDS_COUNT; i++) {
