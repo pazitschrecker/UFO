@@ -27,7 +27,7 @@ Lastly, connect the I2C Liquid Crystal Display power pin to 5V on the breadboard
 
 The Arduino sketch was uploaded from my laptop to the ESP32. Once uploaded, I unplugged the ESP32 from my laptop and powered it with a 9V battery.
 
-The ESP32 is connected to wifi via station mode. To run the project, I connected both the ESP32 and my laptop to a mobile hotspot set up on an iPhone.
+The ESP32 is connected to wifi via station mode. To run the project, I connected both the ESP32 and my laptop to a mobile hotspot set up on an iPhone. Change the "GUEST" wifi and corresponding "guest_pw" to the wifi network and password that you will connect to. Both the ESP32 and computer must be connected to the same network to send messages.
 
 # A note on music
 This project plays music and therefore requires downloaded .wav files. I have not included these in the repository because they are copyrighted materials. In order for your songs to work with the code, do the following: Create a folder in the same location or directory as the python script and call this "songs". Within the songs directory, add the corresponding songs as 3 .wav files with the following names:
