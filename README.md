@@ -3,6 +3,8 @@
 # Description
 This project is meant to provide users with a fun and whimsical learning experience that is difficult to experience due to the covid-19 pandemic. With many museums closed or open with new sanitary regulations, finding interactive exhibits and activities can be more difficult. "Unidentified Fallen Art" is an interactive project through which a user explores an object believed to be an extraterrestrial spaceship. Their job is to determine where the extraterrestrials (ETs) that dropped the object came from through light and textual clues (Hint: it's in our solar system).
 
+Watch a video demo: https://www.youtube.com/watch?v=5KBab6er2QM
+
 # Dependencies
 This project requires the Arduino IDE to run. You can download it here: https://www.arduino.cc/en/software
 Make sure to select the correct download based on your machine (I used a MacBook Pro).
