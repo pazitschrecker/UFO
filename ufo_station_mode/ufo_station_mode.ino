@@ -41,11 +41,14 @@ void setup()
   Serial.begin(115200);
   WiFi.begin(ssid, password);
   Serial.println("");
+  lcd.init();
+  lcd.backlight();
 
   // Wait for connection
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
+    lcd.print(".");
   }
 
   LCdisplayed = false;
@@ -53,14 +56,14 @@ void setup()
   sentPlanet = false;
 
   Serial.println("Connected to wifi");
+  lcd.setCursor(0, 0);
+  lcd.print("CONNECTED");
+  lcd.noBacklight(); // turn off backlight
   Udp.begin(localUdpPort);
   Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
 
   setPlanet();
-  lcd.init();
   strip.begin();
-  strip.setBrightness(0);
-  strip.show();
 
  
   // we recv one packet from the remote so we can know its IP and port
@@ -92,7 +95,7 @@ void loop()
   bool readPacket = false;
 
   // once both displayed, wait for message the user has answered to come in
-  while (!readPacket && sentLight && LCdisplayed &&) {
+  while (!readPacket && sentLight && LCdisplayed && sentPlanet) {
     int packetSize = Udp.parsePacket();
     if (packetSize)
     {
@@ -110,24 +113,27 @@ void loop()
     Udp.printf(String(1).c_str());
     if (sentLight == false) {
       sentLight = true;
-      delay(5000);
     }
     Udp.endPacket();
     Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
   }
 
-  if (touchRead(T0) < 25) {
+  int touch = touchRead(T0);
+  if (touch < 25) {
     lcd.setCursor(0, 0);
     lcd.backlight();
     //lcd.print(messages[planet]);
-    lcd.print(touchRead(T0));
+    lcd.print(touch);
     Udp.printf(String(2).c_str());
     if (!LCdisplayed) {
       LCdisplayed = true;
-      delay(5000);
     }
     Udp.endPacket();
     Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+  }
+
+  if (LCdisplayed) {
+    
   }
  
   String strPlanet = String(planet);
