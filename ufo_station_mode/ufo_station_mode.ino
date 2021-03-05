@@ -5,20 +5,12 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
-/* * * * Server/wifi setup * * * */
-#define CONSOLE_IP "192.168.1.2"
-#define CONSOLE_PORT 4210
-
-const char* ssid = "ESP32";
-const char* password = "12345678";
+//set up to connect to an existing network (e.g. mobile hotspot from laptop that will run the python code)
+const char* ssid = "GUEST";
+const char* password = "guest_pw";
 WiFiUDP Udp;
-IPAddress local_ip(192, 168, 1, 1);
-IPAddress gateway(192, 168, 1, 1);
-IPAddress subnet(255, 255, 255, 0);
-WebServer server(80);
-int wifiNum = 0;
-
-char incomingPacket[255]; 
+unsigned int localUdpPort = 4210;  //  port to listen on
+char incomingPacket[255];  // buffer for incoming packets
 
 /* * * * Motion sensor + LED Ring setup * * * */
 int sensorPin = 14; // the number of the infrared motion sensor pin
@@ -28,97 +20,101 @@ int sensorPin = 14; // the number of the infrared motion sensor pin
 
 int planet = 0;
 String messages[] = {"", "", "We met Perseverance and wanted to say hi!", "", "", "Please, no jokes", "", "We feel left out"};
-
 Freenove_ESP32_WS2812 strip = Freenove_ESP32_WS2812(LEDS_COUNT, LEDS_PIN, CHANNEL, TYPE_GRB);
 
 /* * * * Liquid Crystal I2C setup * * * */
 // set the LCD number of columns and rows
 int lcdColumns = 16;
 int lcdRows = 2;
+int LCdisplay = 0;
+bool sentLight = false;
 
 // set LCD address, number of columns and rows
 // if you don't know your display address, run an I2C scanner sketch
 LiquidCrystal_I2C lcd(0x27, lcdColumns, lcdRows);
 
-/* * * * Variables to keep track of what has been set and sent over wifi * * * */
-int sentPlanet = 0;
-int sentWifiNum = 0;
-int sentIntro = 0;
-int sentLight = 0;
-int sentClue = 0;
-int packetSize = 0;
-int LCdisplay = 0;
-bool startReceived = false;
-
 void setup()
 {
-  Serial.begin(9600);
-  WiFi.softAP(ssid, password);
-  WiFi.softAPConfig(local_ip, gateway, subnet);
-  pinMode(sensorPin, INPUT);  // initialize the sensor pin as input
-  
-  setPlanet();
-  server.begin();
+  int status = WL_IDLE_STATUS;
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+  Serial.println("");
 
-  packetSize = 0;
-  
-  lcd.init();
-
-  Serial.printf("HELP");
-
-  Udp.begin(CONSOLE_PORT);
-
-  
-  
-  while (!startReceived) {
-    Serial.printf(planet, '\n');
-    packetSize = Udp.parsePacket();
-    if (packetSize) {
-      Serial.printf("PACKETS");
-      Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
-      startReceived = true;
-    }
+  // Wait for connection
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
   }
+  Serial.println("Connected to wifi");
+  Udp.begin(localUdpPort);
+  Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
 
+  setPlanet();
+  lcd.init();
   strip.begin();
   strip.setBrightness(0);
+  strip.show();
+
+ 
+  // we recv one packet from the remote so we can know its IP and port
+  bool readPacket = false;
+  while (!readPacket) {
+    int packetSize = Udp.parsePacket();
+    if (packetSize)
+     {
+      // receive incoming UDP packets
+      Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
+      int len = Udp.read(incomingPacket, 255);
+      if (len > 0)
+      {
+        incomingPacket[len] = 0;
+      }
+      Serial.printf("UDP packet contents: %s\n", incomingPacket);
+      readPacket = true;
+    } 
+  }
 }
 
-void loop() {
+void loop()
+{
 
-  Serial.printf("In loop");
-  Udp.beginPacket(CONSOLE_IP, CONSOLE_PORT);
-  
-  // Just test touch pin - Touch0 is T0 which is on GPIO 4.
-  //Udp.printf(String(touchRead(T0)).c_str());
+  delay(5000);
+  // once we know where we got the inital packet from, send data back to that IP address and port
+  Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
 
   if (digitalRead(sensorPin) == 1) {
     setColors();
-    strip.setBrightness(20);
+    strip.setBrightness(60);
     strip.show();
     Udp.printf(String(1).c_str());
+    if (sentLight == false) {
+      sentLight = true;
+      delay(5000);
+    }
+    Udp.endPacket();
+    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
   }
 
-  else if (touchRead(T0) < 28) {
+  if (touchRead(T0) < 25) {
     lcd.setCursor(0, 0);
     lcd.backlight();
-    lcd.print(messages[planet]);
+    //lcd.print(messages[planet]);
+    lcd.print(touchRead(T0));
     Udp.printf(String(2).c_str());
-    LCdisplay = 1;
+    if (LCdisplay == 0) {
+      LCdisplay = 1;
+      delay(5000);
+    }
+    Udp.endPacket();
+    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
   }
-  
-  else {
-    String strPlanet = String(planet);
-    String toSend = "P"+strPlanet;
-    Udp.printf(toSend.c_str());
-  }
+ 
+  String strPlanet = String(planet);
+  String toSend = "P"+strPlanet;
+  Udp.printf(toSend.c_str());
   
   Udp.endPacket();
-  delay(2000);
-}
-
-void setWifiNum() {
-  int num = random(3);
+  delay(1000);
 }
 
 // pick planet at random
