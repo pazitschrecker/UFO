@@ -6,8 +6,8 @@
 #include <LiquidCrystal_I2C.h>
 
 //set up to connect to an existing network (e.g. mobile hotspot from laptop that will run the python code)
-const char* ssid = "GUEST";
-const char* password = "guest_pw";
+const char* ssid = "Pazit's iPhone";
+const char* password = "zb7jix0talil";
 WiFiUDP Udp;
 unsigned int localUdpPort = 4210;  //  port to listen on
 char incomingPacket[255];  // buffer for incoming packets
@@ -19,7 +19,7 @@ int sensorPin = 14; // the number of the infrared motion sensor pin
 #define CHANNEL   0
 
 int planet = 0;
-String messages[] = {"", "", "We met Perseverance and wanted to say hi!", "", "", "Please, no jokes", "", "We feel left out"};
+String messages[8][2] = {{"Our planet is", "small + mighty"}, {"Days are longer", " than years"}, {"We met", "Perseverance!"}, {"Dropped from", "King of planetae"}, {"From the most", "blinged-out planet"}, {"Please,", "no jokes"}, {"Our home is cold", "but we come in peace"}, {"We just want to", "be included"}};
 Freenove_ESP32_WS2812 strip = Freenove_ESP32_WS2812(LEDS_COUNT, LEDS_PIN, CHANNEL, TYPE_GRB);
 
 /* * * * Liquid Crystal I2C setup * * * */
@@ -30,6 +30,7 @@ int lcdRows = 2;
 bool LCdisplayed = false;
 bool sentLight = false;
 bool sentPlanet = false;
+int messagesSent = 0;
 
 // set LCD address, number of columns and rows
 // if you don't know your display address, run an I2C scanner sketch
@@ -54,6 +55,7 @@ void setup()
   LCdisplayed = false;
   sentLight = false;
   sentPlanet = false;
+  messagesSent = 0;
 
   Serial.println("Connected to wifi");
   lcd.setCursor(0, 0);
@@ -64,96 +66,6 @@ void setup()
 
   setPlanet();
   strip.begin();
-
- 
-  // we recv one packet from the remote so we can know its IP and port
-  bool readPacket = false;
-  while (!readPacket) {
-    int packetSize = Udp.parsePacket();
-    if (packetSize)
-     {
-      // receive incoming UDP packets
-      Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
-      int len = Udp.read(incomingPacket, 255);
-      if (len > 0)
-      {
-        incomingPacket[len] = 0;
-      }
-      Serial.printf("UDP packet contents: %s\n", incomingPacket);
-      readPacket = true;
-    } 
-  }
-}
-
-void loop()
-{
-
-  delay(2000);
-  // once we know where we got the inital packet from, send data back to that IP address and port
-  Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
-
-  bool readPacket = false;
-
-  // once both displayed, wait for message the user has answered to come in
-  while (!readPacket && sentLight && LCdisplayed && sentPlanet) {
-    int packetSize = Udp.parsePacket();
-    if (packetSize)
-    {
-      Serial.printf("UDP packet contents: %s\n", incomingPacket);
-      int len = Udp.read(incomingPacket, 255);
-      readPacket = true;
-      reset();
-     }
-   }
-
-  if (digitalRead(sensorPin) == 1) {
-    setColors();
-    strip.setBrightness(60);
-    strip.show();
-    Udp.printf(String(1).c_str());
-    if (sentLight == false) {
-      sentLight = true;
-    }
-    Udp.endPacket();
-    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
-  }
-
-  int touch = touchRead(T0);
-  if (touch < 25) {
-    lcd.setCursor(0, 0);
-    lcd.backlight();
-    //lcd.print(messages[planet]);
-    lcd.print(touch);
-    Udp.printf(String(2).c_str());
-    if (!LCdisplayed) {
-      LCdisplayed = true;
-    }
-    Udp.endPacket();
-    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
-  }
-
-  if (LCdisplayed) {
-    
-  }
- 
-  String strPlanet = String(planet);
-  String toSend = "P"+strPlanet;
-  Udp.printf(toSend.c_str());
-  sentPlanet = true;
-  
-  Udp.endPacket();
-  delay(1000);
-}
-
-void reset() {
-  LCdisplayed = false;
-  sentLight = false;
-  sentPlanet = false;
-  
-  setPlanet();
-  lcd.init();
-  strip.begin();
-  strip.setBrightness(0);
   strip.show();
 
  
@@ -174,15 +86,127 @@ void reset() {
       readPacket = true;
     } 
   }
+  lcd.clear();
+}
+
+void loop()
+{
+
+  delay(2000);
+  // once we know where we got the inital packet from, send data back to that IP address and port
+
+  bool readPacket = false;
+
+  // once both displayed, wait for message the user has answered to come in
+  while (!readPacket && sentLight && LCdisplayed && sentPlanet) {
+    reset();
+    /*
+    int packetSize = Udp.parsePacket();
+    if (packetSize)
+    {
+      Serial.printf("UDP packet contents: %s\n", incomingPacket);
+      int len = Udp.read(incomingPacket, 255);
+      readPacket = true;
+      reset();
+     }
+     */
+   }
+
+   while (messagesSent < 6) {
+    if (digitalRead(sensorPin) == 1) {
+    setColors();
+    strip.setBrightness(60);
+    strip.show();
+ 
+    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+    Udp.printf(String(1).c_str());
+    Udp.endPacket();
+    
+    if (sentLight == false) {
+      sentLight = true;
+    }
+    messagesSent++;
+    delay(1000);
+    }
+  }
+
+  while (messagesSent < 12) {
+    if (!LCdisplayed) {
+      lcd.setCursor(0, 0);
+      lcd.print(messages[planet][0]);
+      lcd.setCursor(0, 1);
+      lcd.print(messages[planet][1]);
+      lcd.backlight();
+      LCdisplayed = true;
+    }
+    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+    Udp.printf(String(2).c_str());
+    Udp.endPacket();
+    messagesSent++;
+    delay(1000);
+  }
+
+  /*int touch = touchRead(T0);
+  if (touch < 25) {
+    lcd.setCursor(0, 0);
+    lcd.backlight();
+    lcd.print(messages[planet]);
+
+    
+    
+    if (!LCdisplayed) {
+      LCdisplayed = true;
+    }
+  }*/
+
+  String strPlanet = String(planet);
+  String toSend = "P"+strPlanet;
+  Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+  Udp.printf(toSend.c_str());
+  Udp.endPacket();
+  sentPlanet = true;
+  
+  delay(1000);
+}
+
+void reset() {
+  LCdisplayed = false;
+  sentLight = false;
+  sentPlanet = false;
+  messagesSent = 0;
+  
+  setPlanet();
+  strip.setBrightness(0);
+  strip.show();
+ 
+  // we recv one packet from the remote so we can know its IP and port
+  bool readPacket = false;
+  while (!readPacket) {
+    Serial.printf("Nothing Yet");
+    int packetSize = Udp.parsePacket();
+    if (packetSize)
+     {
+      // receive incoming UDP packets
+      Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
+      int len = Udp.read(incomingPacket, 255);
+      if (len > 0)
+      {
+        incomingPacket[len] = 0;
+      }
+      Serial.printf("UDP packet contents: %s\n", incomingPacket);
+      readPacket = true;
+      lcd.noBacklight();
+      lcd.clear();
+    } 
+  }
+  delay(5000);
   loop();
 }
 
 // pick planet at random
 void setPlanet() {
-   /*int num = random(8);
+   int num = random(8);
    planet = num;
-   */
-   planet = 7;
 }
 
 // set LED colors to correspond to planet
