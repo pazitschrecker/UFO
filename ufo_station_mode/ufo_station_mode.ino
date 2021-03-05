@@ -6,8 +6,8 @@
 #include <LiquidCrystal_I2C.h>
 
 //set up to connect to an existing network (e.g. mobile hotspot from laptop that will run the python code)
-const char* ssid = "Pazit's iPhone";
-const char* password = "zb7jix0talil";
+const char* ssid = "Guest Hotspot";
+const char* password = "guest_pw";
 WiFiUDP Udp;
 unsigned int localUdpPort = 4210;  //  port to listen on
 char incomingPacket[255];  // buffer for incoming packets
@@ -100,16 +100,6 @@ void loop()
   // once both displayed, wait for message the user has answered to come in
   while (!readPacket && sentLight && LCdisplayed && sentPlanet) {
     reset();
-    /*
-    int packetSize = Udp.parsePacket();
-    if (packetSize)
-    {
-      Serial.printf("UDP packet contents: %s\n", incomingPacket);
-      int len = Udp.read(incomingPacket, 255);
-      readPacket = true;
-      reset();
-     }
-     */
    }
 
    while (messagesSent < 6) {
@@ -145,19 +135,6 @@ void loop()
     messagesSent++;
     delay(1000);
   }
-
-  /*int touch = touchRead(T0);
-  if (touch < 25) {
-    lcd.setCursor(0, 0);
-    lcd.backlight();
-    lcd.print(messages[planet]);
-
-    
-    
-    if (!LCdisplayed) {
-      LCdisplayed = true;
-    }
-  }*/
 
   String strPlanet = String(planet);
   String toSend = "P"+strPlanet;
