@@ -24,11 +24,10 @@ r = range(0, 3)
 def start_music(i):
     global songs
     mixer.init()
+    print(i)
     mixer.music.load(songs[i])
     mixer.music.set_volume(0.7)
     mixer.music.play()
-    while True:
-        pass
 
 
 def stop_music():
@@ -36,45 +35,49 @@ def stop_music():
         mixer.music.stop()
 
 
-def reset():
-    pass
-
-
 def loop():
     wifi_num = 0
     message_showing = 0
+    global planet
     planet = ""
     lit_up = 0
+    time_to_stop = False
 
     while True:
+
         data = sock.recv(2048)
+        #print("data: ", data)
         d = data.decode('utf-8')
-        print("d: ", d)
+        #print("d: ", d)
 
         # light
-        if d == '1' and lit_up == 0:
+        if d == '1' and lit_up == 0 and not time_to_stop:
             time.sleep(1)
             light_message()
-            start_music(random.randint(0, 3))
+            song_num = random.randint(0, 2)
+            start_music(song_num)
             lit_up = 1
             if message_showing == 0:
                 keep_exploring_message()
 
-        elif d == '2' and message_showing == 0:
-            time.sleep(1)
-            touch_message()
-            message_showing = 1
-            if lit_up == 0:
+        elif d == '2' and not time_to_stop:
+            time.sleep(3)
+            if message_showing == 0:
+                touch_message()
+                message_showing = 1
+            '''if lit_up == 0:
                 keep_exploring_message()
+            '''
 
-        elif d[0] == 'P':
-            print(planets[int(d[1])])
-
-        elif lit_up == 1 and message_showing == 1 and len(planet) > 1:
+        elif d[0] == 'P' and not time_to_stop:
+            planet = planets[int(d[1])]
             get_answer()
 
         else:
-            reset()
+            pass
+            #print("lit_up: ", lit_up)
+            #print("message_showing: ", message_showing)
+            #print("planet: ", len(planet))
 
 
 def intro():
@@ -95,16 +98,24 @@ def keep_exploring_message():
 
 
 def get_answer():
-    ready_to_guess = 1
+    #ready_to_guess = 1
+    global planet
     ans = input(
         "Which 'planet' do you believe the ETs who dropped this object originated from?")
-    if ans == planet:
+    if ans.lower() == planet:
         print(
             "That is correct! Thank you for helping us learn about extraterrestrial life!")
     else:
         print("That is wrong. The ETs who dropped this came from ",
-              planets[planet])
-        print(fun_facts[planet])
+              planet)
+
+    time.sleep(3)
+    resp = input("Would you like to examine another object? (y/n)\n")
+    if resp == "y":
+        print("Okay, telling the aliens to drop more objects")
+        stop_music()
+        sock.send('Resetting ESP32'.encode())
+        loop()
 
 
 if __name__ == "__main__":
@@ -113,6 +124,6 @@ if __name__ == "__main__":
     global name
     intro()
     name = input(
-        'Please type your name so that you can begin exploring the object.')
+        'Please type your name so that you can begin exploring the object.\n')
     sock.send('Hello ESP32'.encode())
     loop()
