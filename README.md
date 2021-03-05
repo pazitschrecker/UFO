@@ -7,7 +7,9 @@ This project is meant to provide users with a fun and whimsical learning experie
 This project requires the Arduino IDE to run. You can download it here: https://www.arduino.cc/en/software
 Make sure to select the correct download based on your machine (I used a MacBook Pro).
 In order to run the project, you will also need to install the follow arduino IDE libraries:
+
 `Freenove_WS2812_Lib_for_ESP32.h`
+
 `LiquidCrystal_I2C.h`
 
 Both libraries can be installed by going to Arduino IDE --> "Tools" --> "Manage Libraries" --> Search for the name of the library and install it. 
@@ -30,5 +32,8 @@ The ESP32 is connected to wifi via station mode. To run the project, I connected
 # A note on music
 This project plays music and therefore requires downloaded .wav files. I have not included these in the repository because they are copyrighted materials. In order for your songs to work with the code, do the following: Create a folder in the same location or directory as the python script and call this "songs". Within the songs directory, add the corresponding songs as 3 .wav files with the following names:
 
+- "imperial_march.wav" aka The Imperial March/Darth Vader's Theme (Star Wars: The Empire Strikes Back)
+- "starwars.wav" aka Star Wars Main Theme (Star Wars: A New Hope)
+- "et.wav" aka Flying Theme (E.T. the Extra-Terrestrial)
 
 
